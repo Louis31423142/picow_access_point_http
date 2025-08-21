@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Pico Access Point</title>
+    </head>
+    <body>
+        <h1>Hello from Pico.</h1>
+        <p>Led is <!--#led_state--></p>
+        <form action="/switch.cgi" method="get">
+            <button name="switch" value="switch">Turn led <!--#led_state--></button>
+        </form>
+    </body>
+</html>
