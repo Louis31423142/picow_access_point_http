@@ -12,9 +12,9 @@
 #include "lwip/pbuf.h"
 #include "lwip/ip4_addr.h"
 #include "lwip/init.h"
-#include "lwip/apps/httpd.h" // use lwips httpd server to simplify example
+#include "lwip/apps/httpd.h" // use lwip's httpd server to simplify example
 
-#include "pico/status_led.h" // libary for simplifying onboard LED usage on pico w
+#include "pico/status_led.h" // libary for simplifying onboard LED usage on Pico W
 
 #include "dhcpserver.h"
 #include "dnsserver.h"
@@ -23,6 +23,7 @@
 
 static absolute_time_t wifi_connected_time;
 bool led_state;
+bool complete;
 
 static const char *switch_cgi_handler(int iIndex, int iNumParams, char *pcParam[], char *pcValue[]) {
     printf("Switch cgi handler called\n");
@@ -87,20 +88,13 @@ static u16_t ssi_handler(int iIndex, char *pcInsert, int iInsertLen
   return (u16_t)printed;
 }
 
-// TODO add key press to stop server
-/*
 void key_pressed_func(void *param) {
-    assert(param);
-    TCP_SERVER_T *state = (TCP_SERVER_T*)param;
+    bool *complete = (bool *)param;
     int key = getchar_timeout_us(0); // get any pending key press but don't wait
     if (key == 'd' || key == 'D') {
-        cyw43_arch_lwip_begin();
-        cyw43_arch_disable_ap_mode();
-        cyw43_arch_lwip_end();
-        state->complete = true;
+        *complete = true;
     }
 }
-*/
 
 int main() {
     stdio_init_all();
@@ -111,7 +105,7 @@ int main() {
     }
 
     // Get notified if the user presses a key
-    //stdio_set_chars_available_callback(key_pressed_func, state);
+    stdio_set_chars_available_callback(key_pressed_func, &complete);
 
     const char *ap_name = "picow_test";
 #if 1
@@ -151,9 +145,8 @@ int main() {
     http_set_ssi_handler(ssi_handler, ssi_tags, LWIP_ARRAYSIZE(ssi_tags));
     cyw43_arch_lwip_end();
 
-    //state->complete = false;
-    //while(!state->complete) {
-    while (true) {
+    complete = false;
+    while(!complete) {
         // the following #ifdef is only here so this same example can be used in multiple modes;
         // you do not need it in your code
 #if PICO_CYW43_ARCH_POLL
@@ -171,9 +164,11 @@ int main() {
 #endif
     }
 
+    // Shutdown
+    cyw43_arch_disable_ap_mode();
     dns_server_deinit(&dns_server);
     dhcp_server_deinit(&dhcp_server);
     cyw43_arch_deinit();
-    printf("Test complete\n");
+    printf("Complete\n");
     return 0;
 }
