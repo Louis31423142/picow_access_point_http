@@ -31,7 +31,7 @@ static const char *switch_cgi_handler(int iIndex, int iNumParams, char *pcParam[
     led_state = status_led_get_state();
     printf("LED state: %d\n", led_state);
 
-    // Now just flip the state
+    // Now flip the state
     if (led_state) {
         // Turn led off
         status_led_set_state(0);
@@ -39,6 +39,9 @@ static const char *switch_cgi_handler(int iIndex, int iNumParams, char *pcParam[
         // Turn led on
         status_led_set_state(1);
     }
+
+    // Update led state
+    led_state = status_led_get_state();
 
     return "/index.shtml";
 }
@@ -48,7 +51,8 @@ static tCGI cgi_handlers[] = {
 };
 
 static const char *ssi_tags[] = {
-    "led_state"
+    "led",
+    "not_led"
 };
 
 // Note that the buffer size is limited by LWIP_HTTPD_MAX_TAG_INSERT_LEN, so use LWIP_HTTPD_SSI_MULTIPART to return larger amounts of data
@@ -59,11 +63,19 @@ static u16_t ssi_handler(int iIndex, char *pcInsert, int iInsertLen
 ){
     int printed = 0;
     switch (iIndex) {
-        case 0: { // "led_state"
+        case 0: { // "led"
             if (led_state) {
                 printed = snprintf(pcInsert, iInsertLen, "ON");
             } else {
                 printed = snprintf(pcInsert, iInsertLen, "OFF");
+            }
+            break;
+        }
+        case 1: { // "not_led"
+            if (led_state) {
+                printed = snprintf(pcInsert, iInsertLen, "OFF");
+            } else {
+                printed = snprintf(pcInsert, iInsertLen, "ON");
             }
             break;
         }
